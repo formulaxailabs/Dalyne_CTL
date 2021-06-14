@@ -16,14 +16,15 @@ export_bucket_name = 'exportbucket-dalynedev'
 
 def lambda_handler(event, context):
     
-    #s3_file_name = event["Records"][0]["s3"]["object"]["key"]
-    s3_file_name = "Export/EXP_JAN20_SHEET1.csv" # Export File Name
+    s3_file_name = event["Records"][0]["s3"]["object"]["key"]
+    #s3_file_name = "Export/EXP_JAN20_SHEET1.csv" # Export File Name
     #s3_file_name = "Export/Export_sample_data.csv" # Export File Name
     #s3_file_name = "Import/sample_data2.csv" # Import File Name
     print("Name of the file - ",s3_file_name)
     
     if "Import" in s3_file_name:
       raw_table_name = "core_module_IMPORTRAWTABLE"
+      delete_raw_table_str = f"""delete from public.core_module_IMPORTRAWTABLE;"""
       table_name = "core_module_importtable"
       export_s3_file_name = 'Import_Dataset.csv'
       export_query_str = f"""
@@ -45,6 +46,7 @@ from public.core_module_importrawtable',
       
     elif "Export" in s3_file_name:
       raw_table_name = "core_module_exportRAWTABLE"
+      delete_raw_table_str = f"""delete from public.core_module_EXPORTRAWTABLE;"""
       table_name = "core_module_exporttable"
       export_s3_file_name = 'Export_Dataset.csv'
       export_query_str = f"""
@@ -97,15 +99,20 @@ from public.core_module_exportrawtable',
       connection.commit()
       print('Extension created successfully')
       
+      print(delete_raw_table_str)
+      cursor.execute(delete_raw_table_str)
+      connection.commit()
+      print('Raw Table data deleted successfully')
+      
       print(query_str)
       cursor.execute(query_str)
       connection.commit()
       print('Records added successfully')
       
-      #print(export_query_str)
-      #cursor.execute(export_query_str)
-      #connection.commit()
-      #print('File uploaded successfully')
+      print(export_query_str)
+      cursor.execute(export_query_str)
+      connection.commit()
+      print('File uploaded successfully')
       
       #time.sleep(5)
       
@@ -123,10 +130,10 @@ from public.core_module_exportrawtable',
       cursor = connection.cursor()
       print('connected again successfully')
       
-      #print(table_query_str)
-      #cursor.execute(table_query_str)
-      #connection.commit()
-      #print('Records added to Main Table successfully')
+      print(table_query_str)
+      cursor.execute(table_query_str)
+      connection.commit()
+      print('Records added to Main Table successfully')
 	
     except (Exception, psycopg2.Error) as error:
       print ("Error while connecting to PostgreSQL", error)
