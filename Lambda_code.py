@@ -4,6 +4,7 @@ import csv
 import psycopg2, psycopg2.extras
 import os
 import time
+import sys
 
 s3_client = boto3.client('s3')
 
@@ -29,14 +30,14 @@ def lambda_handler(event, context):
       export_s3_file_name = 'Import_Dataset.csv'
       export_query_str = f"""
     select * from aws_s3.query_export_to_s3(
-    'select nextval(''core_module_importtable_seq''::regclass) as id,
-"TYPE","BE_DATE","MONTH","YEAR","HS_CODE","TWO_DIGIT","FOUR_DIGIT","HS_CODE_DESCRIPTION","COMMODITY_DESCRIPTION","UQC",
+    'select nextval(''core_module_importtable_id_seq''::regclass) as id,
+"TYPE",TO_DATE("BE_DATE", ''YYYY-MM-DD'') as "BE_DATE","MONTH","YEAR",CAST("HS_CODE" AS varchar) AS "HS_CODE","TWO_DIGIT","FOUR_DIGIT","HS_CODE_DESCRIPTION","COMMODITY_DESCRIPTION","UQC",
 "QUANTITY","CURRENCY","UNT_PRICE_FC","INV_VALUE_FC","UNT_PRICE_INR","INVOICE_NO","BE_NO","UNT_RATE_WITH_DUTY_INR",
 "PER_UNT_DUTY_INR","DUTY_INR","DUTY_USD","DUTY_FC","DUTY_PERCT","EX_TOTAL_VALUE_INR","ASS_VALUE_INR",
 "ASS_VALUE_USD","ASS_VALUE_FC","IMPORTER_VALUE_INR","IMPORTER_VALUE_USD","IMPORTER_VALUE_FC","EXCHANGE_RATE","EXPORTER_NAME",
 "EXPORTER_ADDRESS","COUNTRY_OF_ORIGIN","PORT_OF_LOADING","PORT_CODE","PORT_OF_DISCHARGE","MODE_OF_PORT",
 "IMPORTER_ID","IMPORTER_NAME","IMPORTER_ADDRESS","IMPORTER_CITY_OR_STATE","IMPORTER_PIN","IMPORTER_PHONE",
-"IMPORTER_EMAIL","IMPORTER_CONTACT_PERSON","BE_TYPE","CHA_NAME","RECORD_ID",1 as "COUNTRY"
+"IMPORTER_EMAIL","IMPORTER_CONTACT_PERSON","BE_TYPE","CHA_NAME",1 as "COUNTRY"
 from public.core_module_importrawtable',
     aws_commons.create_s3_uri(
         '{export_bucket_name}',
@@ -51,12 +52,12 @@ from public.core_module_importrawtable',
       export_s3_file_name = 'Export_Dataset.csv'
       export_query_str = f"""
     select * from aws_s3.query_export_to_s3(
-    'select nextval(''core_module_exporttable_seq''::regclass) as id,
-"TYPE","BE_DATE","MONTH","YEAR","HS_CODE","TWO_DIGIT","FOUR_DIGIT","HS_CODE_DESCRIPTION","COMMODITY_DESCRIPTION","UQC",
+    'select nextval(''core_module_exporttable_id_seq''::regclass) as id,
+"TYPE",TO_DATE("BE_DATE",''YYYY-MM-DD'') as "BE_DATE","MONTH","YEAR",CAST("HS_CODE" AS varchar) AS "HS_CODE","TWO_DIGIT","FOUR_DIGIT","HS_CODE_DESCRIPTION","COMMODITY_DESCRIPTION","UQC",
 "QUANTITY","CURRENCY","UNT_PRICE_FC","INV_VALUE_FC","UNT_PRICE_INR","INVOICE_NO","SB_NO","UNIT_RATE_WITH_FOB_INR","PER_UNT_FOB",
 "FOB_INR","FOB_FC","FOB_USD","EXCHANGE_RATE","IMPORTER_NAME","IMPORTER_ADDRESS","COUNTRY_OF_ORIGIN","PORT_OF_DISCHARGE","MODE_OF_PORT",
 "PORT_OF_LODING","PORT_CODE","IEC","EXPORTER_NAME","EXPORTER_ADDRESS","EXPORTER_CITY","EXPORTER_PIN","EXPORTER_PHONE","EXPORTER_EMAIL",
-"EXPORTER_CONTACT_PERSON","RECORD_ID",1 as "COUNTRY"
+"EXPORTER_CONTACT_PERSON",1 as "COUNTRY"
 from public.core_module_exportrawtable',
     aws_commons.create_s3_uri(
         '{export_bucket_name}',
@@ -67,7 +68,7 @@ from public.core_module_exportrawtable',
       exit(1)
     print(table_name)
     
-    aws_s3_query_str = f"""DROP EXTENSION aws_s3; DROP EXTENSION aws_commons; CREATE EXTENSION if not exists aws_s3 CASCADE;"""
+    aws_s3_query_str = f"""DROP EXTENSION if exists aws_s3; DROP EXTENSION if exists aws_commons; CREATE EXTENSION if not exists aws_s3 CASCADE;"""
     
     query_str = f"""
     select aws_s3.table_import_from_s3(
@@ -118,6 +119,7 @@ from public.core_module_exportrawtable',
       
     except (Exception, psycopg2.Error) as error:
       print ("Error while connecting to PostgreSQL", error)
+      sys.exit()
     finally:
         #closing database connection.
             if(connection):
@@ -137,6 +139,7 @@ from public.core_module_exportrawtable',
 	
     except (Exception, psycopg2.Error) as error:
       print ("Error while connecting to PostgreSQL", error)
+      sys.exit()
     finally:
         #closing database connection.
             if(connection):
