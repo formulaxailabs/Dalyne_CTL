@@ -20,7 +20,7 @@ CREATE TABLE public.core_module_importrawtable
     "UNT_PRICE_FC" numeric(20,7),
     "INV_VALUE_FC" numeric(20,7),
     "UNT_PRICE_INR" numeric(20,2),
-    "INVOICE_NO" integer,
+    "INVOICE_NO" text COLLATE pg_catalog."default",
     "BE_NO" integer,
     "UNT_RATE_WITH_DUTY_INR" numeric(25,10),
     "PER_UNT_DUTY_INR" numeric(25,10),
